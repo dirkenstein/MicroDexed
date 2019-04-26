@@ -152,7 +152,7 @@ void Dexed::getSamples(uint16_t n_samples, int16_t* buffer)
           int32_t clip_val = val < -(1 << 24) ? 0x8000 : val >= (1 << 24) ? 0x7fff : val >> 9;
 #endif
 
-          float f = static_cast<float>(clip_val >> REDUCE_LOUDNESS) / 0x8000;
+          float f = static_cast<float>(clip_val >> REDUCE_LOUDNESS) / 0x7fff;
           if (f > 1.0)
           {
             f = 1.0;
@@ -173,7 +173,7 @@ void Dexed::getSamples(uint16_t n_samples, int16_t* buffer)
   fx.process(sumbuf, n_samples);
 
   for (i = 0; i < n_samples; ++i)
-    buffer[i] = static_cast<int16_t>(sumbuf[i] * 0x8000);
+    buffer[i] = static_cast<int16_t>(sumbuf[i] * 0x7fff);
 }
 
 void Dexed::keydown(uint8_t pitch, uint8_t velo) {
