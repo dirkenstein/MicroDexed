@@ -36,29 +36,23 @@
 extern Encoder4 enc[2];
 extern int32_t enc_val[2];
 extern Bounce but[2];
-extern float vol;
-extern float pan;
 extern LiquidCrystalPlus_I2C lcd;
-extern uint8_t bank;
+extern config_t configuration;
 extern uint8_t max_loaded_banks;
-extern uint8_t voice;
 extern char bank_name[BANK_NAME_LEN];
 extern char voice_name[VOICE_NAME_LEN];
 extern uint8_t ui_state;
 extern uint8_t ui_main_state;
-extern uint8_t midi_channel;
-extern void eeprom_write(uint8_t status);
+extern void eeprom_write(void);
 extern void set_volume(float v, float pan);
 extern elapsedMillis autostore;
 extern elapsedMillis long_button_pressed;
-extern uint8_t effect_filter_frq;
+extern uint8_t effect_filter_cutoff;
 extern uint8_t effect_filter_resonance;
-extern uint8_t effect_filter_octave;
 extern uint8_t effect_delay_time;
 extern uint8_t effect_delay_feedback;
 extern uint8_t effect_delay_volume;
 extern bool effect_delay_sync;
-extern AudioFilterStateVariable filter1;
 extern AudioEffectDelay delay1;
 extern AudioMixer4 mixer1;
 extern AudioMixer4 mixer2;
@@ -72,7 +66,7 @@ void ui_show_effects_delay(void);
 float mapfloat(float val, float in_min, float in_max, float out_min, float out_max);
 
 enum ui_states {UI_MAIN, UI_VOLUME, UI_MIDICHANNEL, UI_EFFECTS_FILTER, UI_EFFECTS_DELAY};
-enum ui_main_states {UI_MAIN_BANK, UI_MAIN_VOICE, UI_MAIN_BANK_SELECTED, UI_MAIN_VOICE_SELECTED, UI_MAIN_FILTER_FRQ, UI_MAIN_FILTER_RES, UI_MAIN_FILTER_OCT, UI_MAIN_DELAY_TIME, UI_MAIN_DELAY_FEEDBACK, UI_MAIN_DELAY_VOLUME};
+enum ui_main_states {UI_MAIN_BANK, UI_MAIN_VOICE, UI_MAIN_BANK_SELECTED, UI_MAIN_VOICE_SELECTED, UI_MAIN_FILTER_RES, UI_MAIN_FILTER_CUT, UI_MAIN_DELAY_TIME, UI_MAIN_DELAY_FEEDBACK, UI_MAIN_DELAY_VOLUME};
 
 class MyEncoder : public Encoder
 {

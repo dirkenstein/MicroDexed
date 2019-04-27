@@ -31,7 +31,7 @@
 // ATTENTION! For better latency you have to redefine AUDIO_BLOCK_SAMPLES from
 // 128 to 64 in <ARDUINO-IDE-DIR>/cores/teensy3/AudioStream.h
 
-#define VERSION "0.9.2"
+#define VERSION "0.9.4"
 
 //*************************************************************************************************
 //* DEVICE SETTINGS
@@ -41,6 +41,7 @@
 #define MIDI_DEVICE_DIN Serial1
 #define MIDI_DEVICE_USB 1
 #define MIDI_DEVICE_USB_HOST 1
+#define MIDI_DEVICE_NUMBER 0
 
 // AUDIO
 // If nothing is defined PT8211 is used as audio output device!
@@ -89,6 +90,11 @@
 #endif
 #define SAMPLE_RATE 44100
 
+//*************************************************************************************************
+//* UI AND DATA-STORE SETTINGS
+//*************************************************************************************************
+#define CONTROL_RATE_MS 200
+#define TIMER_UI_HANDLING_MS 100
 
 //*************************************************************************************************
 //* DEBUG OUTPUT SETTINGS
@@ -114,13 +120,11 @@
 
 // Encoder with button
 #define ENC_VOL_STEPS 43
-#define ENC_FILTER_FRQ_STEPS 50
-#define ENC_FILTER_RES_STEPS 35
-#define ENC_FILTER_OCT_STEPS 27
+#define ENC_FILTER_RES_STEPS 100
+#define ENC_FILTER_CUT_STEPS 100
 #define ENC_DELAY_TIME_STEPS 50
 #define ENC_DELAY_FB_STEPS 35
 #define ENC_DELAY_VOLUME_STEPS 50
-#define TIMER_UI_HANDLING_MS 100
 #define NUM_ENCODER 2
 #define ENC_L_PIN_A  3
 #define ENC_L_PIN_B  2
@@ -144,22 +148,7 @@
 #define AUTOSTORE_FAST_MS 50
 
 // EEPROM address
-#define EEPROM_OFFSET 0
-#define EEPROM_DATA_LENGTH 5
-
-#define EEPROM_CRC32_ADDR EEPROM.length()-sizeof(uint32_t)-33
-#define EEPROM_BANK_ADDR 0
-#define EEPROM_VOICE_ADDR 1
-#define EEPROM_MASTER_VOLUME_ADDR 2
-#define EEPROM_PAN_ADDR 3
-#define EEPROM_MIDICHANNEL_ADDR 4
-
-#define EEPROM_UPDATE_BANK (1<<0)
-#define EEPROM_UPDATE_VOICE (1<<1)
-#define EEPROM_UPDATE_VOL (1<<2)
-#define EEPROM_UPDATE_PAN (1<<3)
-#define EEPROM_UPDATE_MIDICHANNEL (1<<4)
-#define EEPROM_UPDATE_CHECKSUM (1<<7)
+#define EEPROM_START_ADDRESS 0
 
 #define MAX_BANKS 100
 #define MAX_VOICES 32 // voices per bank
@@ -193,4 +182,13 @@
 #define USE_TEENSY_DSP 1
 #define SUM_UP_AS_INT 1
 
+// struct for holding the current configuration
+struct config_t {
+  uint32_t checksum;
+  uint8_t bank;
+  uint8_t voice;
+  float vol;
+  float pan;
+  uint8_t midi_channel;
+};
 #endif // CONFIG_H_INCLUDED

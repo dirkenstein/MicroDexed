@@ -33,6 +33,7 @@
 #include "sin.h"
 #include "freqlut.h"
 #include "controllers.h"
+#include "PluginFx.h"
 #include <unistd.h>
 #include <limits.h>
 #ifdef USE_TEENSY_DSP
@@ -51,6 +52,7 @@ Dexed::Dexed(int rate)
   Lfo::init(rate);
   PitchEnv::init(rate);
   Env::init_sr(rate);
+  fx.init(rate);
 
   engineMkI = new EngineMkI;
   engineOpl = new EngineOpl;
@@ -63,7 +65,7 @@ Dexed::Dexed(int rate)
     voices[i].live = false;
   }
 
-  max_notes = 16;
+  max_notes = MAX_NOTES;
   currentNote = 0;
   resetControllers();
   controllers.masterTune = 0;
@@ -107,41 +109,41 @@ void Dexed::deactivate(void)
 void Dexed::getSamples(uint16_t n_samples, int16_t* buffer)
 {
   uint16_t i;
+  float sumbuf[n_samples];
 
-  if (refreshVoice) {
-    for (i = 0; i < max_notes; i++) {
+  if (refreshVoice)
+  {
+    for (i = 0; i < max_notes; i++)
+    {
       if ( voices[i].live )
         voices[i].dx7_note->update(data, voices[i].midi_note, voices[i].velocity);
     }
+
     lfo.reset(data + 137);
     refreshVoice = false;
   }
 
-  for (i = 0; i < n_samples; i += _N_) {
+  for (i = 0; i < n_samples; i += _N_)
+  {
     AlignedBuf<int32_t, _N_> audiobuf;
-#ifndef SUM_UP_AS_INT
-    float sumbuf[_N_];
-#endif
 
-    for (uint8_t j = 0; j < _N_; ++j) {
+    for (uint8_t j = 0; j < _N_; ++j)
+    {
       audiobuf.get()[j] = 0;
-#ifndef SUM_UP_AS_INT
-      sumbuf[j] = 0.0;
-#else
-      buffer[i + j] = 0;
-#endif
+      sumbuf[i + j] = 0.0;
     }
 
     int32_t lfovalue = lfo.getsample();
     int32_t lfodelay = lfo.getdelay();
-#ifdef SUM_UP_AS_INT
-    int32_t sum;
-#endif
 
-    for (uint8_t note = 0; note < max_notes; ++note) {
-      if (voices[note].live) {
+    for (uint8_t note = 0; note < max_notes; ++note)
+    {
+      if (voices[note].live)
+      {
         voices[note].dx7_note->compute(audiobuf.get(), lfovalue, lfodelay, &controllers);
-        for (uint8_t j = 0; j < _N_; ++j) {
+
+        for (uint8_t j = 0; j < _N_; ++j)
+        {
           int32_t val = audiobuf.get()[j];
           val = val >> 4;
 #ifdef USE_TEENSY_DSP
@@ -149,45 +151,29 @@ void Dexed::getSamples(uint16_t n_samples, int16_t* buffer)
 #else
           int32_t clip_val = val < -(1 << 24) ? 0x8000 : val >= (1 << 24) ? 0x7fff : val >> 9;
 #endif
-#ifdef SUM_UP_AS_INT
-          //sum = buffer[i + j] + (clip_val >> REDUCE_LOUDNESS)*(float(data[DEXED_GLOBAL_PARAMETER_OFFSET+DEXED_VOICE_VOLUME])/255);
-          sum = buffer[i + j] + (clip_val >> REDUCE_LOUDNESS);
-          if (buffer[i + j] > 0 && clip_val > 0 && sum < 0)
+
+          float f = static_cast<float>(clip_val >> REDUCE_LOUDNESS) / 0x7fff;
+          if (f > 1.0)
           {
-            sum = INT_MAX;
+            f = 1.0;
             overload++;
           }
-          else if (buffer[i + j] < 0 && clip_val < 0 && sum > 0)
+          else if (f < -1.0)
           {
-            sum = INT_MIN;
+            f = -1.0;
             overload++;
           }
-          buffer[i + j] = sum;
+          sumbuf[i + j] += f;
           audiobuf.get()[j] = 0;
-#else
-          float f = static_cast<float>(clip_val >> REDUCE_LOUDNESS) / 0x8000;
-          if (f > 1)
-          {
-            f = 1;
-            overload++;
-          }
-          else if (f < -1)
-          {
-            f = -1;
-            overload++;
-          }
-          sumbuf[j] += f;
-          audiobuf.get()[j] = 0;
-#endif
         }
       }
     }
-#ifndef SUM_UP_AS_INT
-    for (uint8_t j = 0; j < _N_; ++j) {
-      buffer[i + j] = static_cast<int16_t>(sumbuf[j] * 0x8000);
-    }
-#endif
   }
+
+  fx.process(sumbuf, n_samples);
+
+  for (i = 0; i < n_samples; ++i)
+    buffer[i] = static_cast<int16_t>(sumbuf[i] * 0x7fff);
 }
 
 void Dexed::keydown(uint8_t pitch, uint8_t velo) {
@@ -389,6 +375,54 @@ void Dexed::setMaxNotes(uint8_t n) {
 uint8_t Dexed::getMaxNotes(void)
 {
   return max_notes;
+}
+
+uint8_t Dexed::getNumNotesPlaying(void)
+{
+  uint8_t op_carrier = controllers.core->get_carrier_operators(data[134]); // look for carriers
+  uint8_t i;
+  uint8_t count_playing_voices = 0;
+
+  for (i = 0; i < max_notes; i++)
+  {
+    if (voices[i].live == true)
+    {
+      uint8_t op_amp = 0;
+      uint8_t op_carrier_num = 0;
+
+      memset(&voiceStatus, 0, sizeof(VoiceStatus));
+      voices[i].dx7_note->peekVoiceStatus(voiceStatus);
+
+      for (uint8_t op = 0; op < 6; op++)
+      {
+        if ((op_carrier & (1 << op)))
+        {
+          // this voice is a carrier!
+          op_carrier_num++;
+          if (voiceStatus.amp[op] <= 1069 && voiceStatus.ampStep[op] == 4)
+          {
+            // this voice produces no audio output
+            op_amp++;
+          }
+        }
+      }
+
+      if (op_amp == op_carrier_num)
+      {
+        // all carrier-operators are silent -> disable the voice
+        voices[i].live = false;
+        voices[i].sustained = false;
+        voices[i].keydown = false;
+#ifdef DEBUG
+        Serial.print(F("Shutdown voice: "));
+        Serial.println(i, DEC);
+#endif
+      }
+      else
+        count_playing_voices++;
+    }
+  }
+  return (count_playing_voices);
 }
 
 bool Dexed::loadSysexVoice(uint8_t* new_data)
