@@ -103,9 +103,8 @@ uint8_t midi_timing_counter = 0; // 24 per qarter
 elapsedMillis midi_timing_timestep;
 uint16_t midi_timing_quarter = 0;
 elapsedMillis long_button_pressed;
-uint8_t effect_filter_frq = ENC_FILTER_FRQ_STEPS;
+uint8_t effect_filter_cutoff = 0;
 uint8_t effect_filter_resonance = 0;
-uint8_t effect_filter_octave = (1.0 * ENC_FILTER_RES_STEPS / 8.0) + 0.5;
 uint8_t effect_delay_time = 0;
 uint8_t effect_delay_feedback = 0;
 uint8_t effect_delay_volume = 0;
@@ -226,11 +225,9 @@ void setup()
     mixer2.gain(0, 1.0 - mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // original signal
     mixer2.gain(1, mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // delayed signal (including feedback)
     mixer2.gain(2, mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // only delayed signal (without feedback)
-
-    // just for testing:
-    dexed->fx.Reso = 0.5;
-    dexed->fx.Gain = 0.5;
-    dexed->fx.Cutoff = 0.5;
+    dexed->fx.Gain =  1.0;
+    dexed->fx.Reso = 1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS;
+    dexed->fx.Cutoff = 1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS;
 
     // load default SYSEX data
     load_sysex(configuration.bank, configuration.voice);
@@ -419,32 +416,15 @@ void handleControlChange(byte inChannel, byte inCtrl, byte inValue)
           }
         }
         break;
-      case 102:  // CC 102: filter frequency
-/*        effect_filter_frq = map(inValue, 0, 127, 0, ENC_FILTER_FRQ_STEPS);
-        if (effect_filter_frq == ENC_FILTER_FRQ_STEPS)
-        {
-          // turn "off" filter
-          mixer1.gain(0, 0.0); // filtered signal off
-          mixer1.gain(3, 1.0); // original signal on
-        }
-        else
-        {
-          // turn "on" filter
-          mixer1.gain(0, 1.0); // filtered signal on
-          mixer1.gain(3, 0.0); // original signal off
-        }
-        filter1.frequency(EXP_FUNC((float)map(effect_filter_frq, 0, ENC_FILTER_FRQ_STEPS, 0, 1024) / 150.0) * 10.0 + 80.0);
-        handle_ui(); */
-        break;
       case 103:  // CC 103: filter resonance
-/*        effect_filter_resonance = map(inValue, 0, 127, 0, ENC_FILTER_RES_STEPS);
-        filter1.resonance(EXP_FUNC(mapfloat(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0.7, 5.0)) * 0.044 + 0.61);
-        handle_ui(); */
+        effect_filter_resonance = map(inValue, 0, 127, 0, ENC_FILTER_RES_STEPS);
+        dexed->fx.Reso = 1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS;
+        handle_ui();
         break;
-      case 104:  // CC 104: filter octave
-/*      effect_filter_octave = map(inValue, 0, 127, 0, ENC_FILTER_OCT_STEPS);
-        filter1.octaveControl(mapfloat(effect_filter_octave, 0, ENC_FILTER_OCT_STEPS, 0.0, 7.0));
-        handle_ui(); */
+      case 104:  // CC 104: filter cutoff
+        effect_filter_cutoff = map(inValue, 0, 127, 0, ENC_FILTER_CUT_STEPS);
+        dexed->fx.Cutoff = 1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS;
+        handle_ui();
         break;
       case 105:  // CC 105: delay time
         effect_delay_time = map(inValue, 0, 127, 0, ENC_DELAY_TIME_STEPS);

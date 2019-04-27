@@ -84,8 +84,8 @@ void handle_ui(void)
             switch (ui_state)
             {
               case UI_MAIN:
-                ui_main_state = UI_MAIN_FILTER_FRQ;
-                enc[i].write(effect_filter_frq);
+                ui_main_state = UI_MAIN_FILTER_RES;
+                enc[i].write(effect_filter_resonance);
                 enc_val[i] = enc[i].read();
                 ui_show_effects_filter();
                 break;
@@ -155,21 +155,15 @@ void handle_ui(void)
               case UI_EFFECTS_DELAY:
                 switch (ui_main_state)
                 {
-                  case UI_MAIN_FILTER_FRQ:
+                  case UI_MAIN_FILTER_RES:
+                    ui_main_state = UI_MAIN_FILTER_CUT;
+                    enc[i].write(effect_filter_cutoff);
+                    enc_val[i] = enc[i].read();
+                    ui_show_effects_filter();
+                    break;
+                  case UI_MAIN_FILTER_CUT:
                     ui_main_state = UI_MAIN_FILTER_RES;
                     enc[i].write(effect_filter_resonance);
-                    enc_val[i] = enc[i].read();
-                    ui_show_effects_filter();
-                    break;
-                  case UI_MAIN_FILTER_RES:
-                    ui_main_state = UI_MAIN_FILTER_OCT;
-                    enc[i].write(effect_filter_octave);
-                    enc_val[i] = enc[i].read();
-                    ui_show_effects_filter();
-                    break;
-                  case UI_MAIN_FILTER_OCT:
-                    ui_main_state = UI_MAIN_FILTER_FRQ;
-                    enc[i].write(effect_filter_frq);
                     enc_val[i] = enc[i].read();
                     ui_show_effects_filter();
                     break;
@@ -291,61 +285,29 @@ void handle_ui(void)
             case UI_EFFECTS_FILTER:
               switch (ui_main_state)
               {
-                case UI_MAIN_FILTER_FRQ:
-                  if (enc[i].read() <= 0)
-                    enc[i].write(0);
-                  else if (enc[i].read() > ENC_FILTER_FRQ_STEPS)
-                    enc[i].write(ENC_FILTER_FRQ_STEPS);
-                  effect_filter_frq = enc[i].read();
-                  /*
-                    if (effect_filter_frq == ENC_FILTER_FRQ_STEPS)
-                    {
-                    // turn "off" filter
-                    mixer1.gain(0, 0.0); // filtered signal off
-                    mixer1.gain(3, 1.0); // original signal on
-                    }
-                    else
-                    {
-                    // turn "on" filter
-                    mixer1.gain(0, 1.0); // filtered signal on
-                    mixer1.gain(3, 0.0); // original signal off
-                    }
-                    filter1.frequency(EXP_FUNC((float)map(effect_filter_frq, 0, ENC_FILTER_FRQ_STEPS, 0, 1024) / 150.0) * 10.0 + 80.0);
-                    #ifdef DEBUG
-                    Serial.print(F("Setting filter frequency to: "));
-                    Serial.println(EXP_FUNC((float)map(effect_filter_frq, 0, ENC_FILTER_FRQ_STEPS, 0, 1024) / 150.0) * 10.0 + 80.0, DEC);
-                    #endif
-                  */
-                  break;
                 case UI_MAIN_FILTER_RES:
                   if (enc[i].read() <= 0)
                     enc[i].write(0);
                   else if (enc[i].read() > ENC_FILTER_RES_STEPS)
                     enc[i].write(ENC_FILTER_RES_STEPS);
                   effect_filter_resonance = enc[i].read();
-                  /*
-                    //filter1.resonance(mapfloat(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0.7, 5.0));
-                    filter1.resonance(EXP_FUNC(mapfloat(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0.7, 5.0)) * 0.044 + 0.61);
-
-                    #ifdef DEBUG
-                    Serial.print(F("Setting filter resonance to: "));
-                    Serial.println(EXP_FUNC(mapfloat(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0.7, 5.0)) * 0.044 + 0.61, 2);
-                    #endif
-                  */
+                  dexed->fx.Reso = 1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS;
+#ifdef DEBUG
+                  Serial.print(F("Setting filter resonance to: "));
+                  Serial.println(1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS, 5);
+#endif
                   break;
-                case UI_MAIN_FILTER_OCT:
+                case UI_MAIN_FILTER_CUT:
                   if (enc[i].read() <= 0)
                     enc[i].write(0);
-                  else if (enc[i].read() > ENC_FILTER_OCT_STEPS)
-                    enc[i].write(ENC_FILTER_OCT_STEPS);
-                  effect_filter_octave = enc[i].read();
-                  /*
-                    filter1.octaveControl(mapfloat(effect_filter_octave, 0, ENC_FILTER_OCT_STEPS, 0.0, 7.0));
-                    #ifdef DEBUG
-                    Serial.print(F("Setting filter octave control to: "));
-                    Serial.println(mapfloat(effect_filter_octave, 0, ENC_FILTER_OCT_STEPS, 0.0, 7.0), 2);
-                    #endif
-                  */
+                  else if (enc[i].read() > ENC_FILTER_CUT_STEPS)
+                    enc[i].write(ENC_FILTER_CUT_STEPS);
+                  effect_filter_cutoff = enc[i].read();
+                  dexed->fx.Cutoff = 1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS;
+#ifdef DEBUG
+                  Serial.print(F("Setting filter cutoff to: "));
+                  Serial.println(1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS, 5);
+#endif
                   break;
               }
               ui_show_effects_filter();
@@ -509,32 +471,12 @@ void ui_show_effects_filter(void)
   {
     lcd.clear();
     lcd.show(0, 0, LCD_CHARS, "Filter");
-    lcd.show(0, 7, 2, "F:");
     lcd.show(1, 0, 4, "Res:");
-    lcd.show(1, 8, 4, "Oct:");
+    lcd.show(1, 8, 4, "Cut:");
   }
 
-  if (effect_filter_frq == ENC_FILTER_FRQ_STEPS)
-  {
-    lcd.show(0, 10, 4, "OFF ");
-  }
-  else
-  {
-    lcd.show(0, 10, 4, uint16_t(EXP_FUNC((float)map(effect_filter_frq, 0, ENC_FILTER_FRQ_STEPS, 0, 1024) / 150.0) * 10.0 + 80.5));
-  }
   lcd.show(1, 5, 2, map(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0, 99));
-  lcd.show(1, 13, 2, map(effect_filter_octave, 0, ENC_FILTER_OCT_STEPS, 0, 80));
-
-  if (ui_main_state == UI_MAIN_FILTER_FRQ)
-  {
-    lcd.show(0, 9, 1, "[");
-    lcd.show(0, 14, 1, "]");
-  }
-  else
-  {
-    lcd.show(0, 9, 1, " ");
-    lcd.show(0, 14, 1, " ");
-  }
+  lcd.show(1, 13, 2, map(effect_filter_cutoff, 0, ENC_FILTER_CUT_STEPS, 0, 99));
 
   if (ui_main_state == UI_MAIN_FILTER_RES)
   {
@@ -547,7 +489,7 @@ void ui_show_effects_filter(void)
     lcd.show(1, 7, 1, " ");
   }
 
-  if (ui_main_state == UI_MAIN_FILTER_OCT)
+  if (ui_main_state == UI_MAIN_FILTER_CUT)
   {
     lcd.show(1, 12, 1, "[");
     lcd.show(1, 15, 1, "]");
