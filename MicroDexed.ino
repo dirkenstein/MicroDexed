@@ -163,11 +163,16 @@ void setup()
   sgtl5000_1.unmuteHeadphone();
   sgtl5000_1.unmuteLineout();
   sgtl5000_1.autoVolumeDisable(); // turn off AGC
-  sgtl5000_1.volume(1.0, 1.0);
-  sgtl5000_1.lineOutLevel(31);
+  sgtl5000_1.volume(0.5,0.5); // Headphone volume
+  sgtl5000_1.lineOutLevel(SGTL5000_LINEOUT_LEVEL);
   sgtl5000_1.audioPostProcessorEnable();
   sgtl5000_1.autoVolumeControl(1, 1, 1, 0.9, 0.01, 0.05);
   sgtl5000_1.autoVolumeEnable();
+  //sgtl5000_1.surroundSoundEnable();
+  //sgtl5000_1.surroundSound(width, select);
+  //sgtl5000_1.enhanceBassEnable();
+  //sgtl5000_1.enhanceBass(lr_lev, bass_lev, hpf_bypass, cutoff);
+  //sgtl5000_1.eqBands(bass, mid_bass, midrange, mid_treble, treble);
   Serial.println(F("Teensy-Audio-Board enabled."));
 #elif defined(TGA_AUDIO_BOARD)
   wm8731_1.enable();
