@@ -137,7 +137,7 @@ void setup()
   delay(220);
   Serial.println(F("MicroDexed based on https://github.com/asb2m10/dexed"));
   Serial.println(F("(c)2018,2019 H. Wirtz <wirtz@parasitstudio.de>"));
-  Serial.println(F("https://github.com/dcoredump/MicroDexed"));
+  Serial.println(F("https://codeberg.org/dcoredump/MicroDexed"));
   Serial.print(F("Version: "));
   Serial.println(VERSION);
   Serial.println(F("<setup start>"));
@@ -163,10 +163,20 @@ void setup()
   sgtl5000_1.audioPostProcessorEnable();
   sgtl5000_1.autoVolumeControl(1, 1, 1, 0.9, 0.01, 0.05);
   sgtl5000_1.autoVolumeEnable();
-  //sgtl5000_1.surroundSoundEnable();
-  //sgtl5000_1.surroundSound(width, select);
-  //sgtl5000_1.enhanceBassEnable();
-  //sgtl5000_1.enhanceBass(lr_lev, bass_lev, hpf_bypass, cutoff);
+  sgtl5000_1.surroundSoundEnable();
+  sgtl5000_1.surroundSound(7, 2); // Configures virtual surround width from 0 (mono) to 7 (widest). select may be set to 1 (disable), 2 (mono input) or 3 (stereo input).
+  sgtl5000_1.enhanceBassEnable();
+  sgtl5000_1.enhanceBass(1.0, 0.2, 1, 2); // Configures the bass enhancement by setting the levels of the original stereo signal and the bass-enhanced mono level which will be mixed together. The high-pass filter may be enabled (0) or bypassed (1).
+  /* The cutoff frequency is specified as follows:
+    value  frequency
+    0      80Hz
+    1     100Hz
+    2     125Hz
+    3     150Hz
+    4     175Hz
+    5     200Hz
+    6     225Hz
+  */
   //sgtl5000_1.eqBands(bass, mid_bass, midrange, mid_treble, treble);
   Serial.println(F("Teensy-Audio-Board enabled."));
 #elif defined(TGA_AUDIO_BOARD)

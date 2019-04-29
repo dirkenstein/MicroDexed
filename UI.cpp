@@ -215,7 +215,7 @@ void handle_ui(void)
               //set_volume(float(map(enc[i].read(), 0, ENC_VOL_STEPS, 0, 100)) / 100, configuration.pan);
               tmp = (float(map(enc[i].read(), 0, ENC_VOL_STEPS, 0, 100)) / 100) - configuration.vol;
               soften_volume.diff = tmp / SOFTEN_VALUE_CHANGE_STEPS;
-              soften_volume.steps = SOFTEN_VALUE_CHANGE_STEPS;
+              soften_volume.steps = SOFTEN_VALUE_CHANGE_STEPS + 1;
 #ifdef DEBUG
               Serial.print(F("Setting soften volume from: "));
               Serial.print(configuration.vol, 5);
@@ -445,13 +445,13 @@ void ui_show_volume(void)
   }
 
   // show value
-  lcd.show(0, LCD_CHARS - 3, 3, configuration.vol * 100);
+  lcd.show(0, LCD_CHARS - 3, 3, (configuration.vol * 100 + 0.5));
 
   if (pos != old_pos)
   {
     lcd.show(1, pos, 1, "*");
     lcd.show(1, old_pos, 1, " ");
-    old_pos=pos;
+    old_pos = pos;
   }
 
   ui_state = UI_VOLUME;
