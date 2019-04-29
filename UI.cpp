@@ -203,6 +203,7 @@ void handle_ui(void)
       switch (i)
       {
         case 0: // left encoder moved
+          float tmp;
           switch (ui_state)
           {
             case UI_MAIN:
@@ -211,7 +212,18 @@ void handle_ui(void)
                 enc[i].write(0);
               else if (enc[i].read() >= ENC_VOL_STEPS)
                 enc[i].write(ENC_VOL_STEPS);
-              set_volume(float(map(enc[i].read(), 0, ENC_VOL_STEPS, 0, 100)) / 100, configuration.pan);
+              //set_volume(float(map(enc[i].read(), 0, ENC_VOL_STEPS, 0, 100)) / 100, configuration.pan);
+              tmp = (float(map(enc[i].read(), 0, ENC_VOL_STEPS, 0, 100)) / 100) - configuration.vol;
+              soften_volume.diff = tmp / SOFTEN_VALUE_CHANGE_STEPS;
+              soften_volume.steps = SOFTEN_VALUE_CHANGE_STEPS;
+#ifdef DEBUG
+              Serial.print(F("Setting soften volume from: "));
+              Serial.print(configuration.vol, 5);
+              Serial.print(F(" Volume step: "));
+              Serial.print(soften_volume.steps);
+              Serial.print(F(" Volume diff: "));
+              Serial.println(soften_volume.diff, 5);
+#endif
               eeprom_write();
               ui_show_volume();
               break;
@@ -416,28 +428,30 @@ void ui_show_main(void)
 
 void ui_show_volume(void)
 {
+  uint8_t pos;
+  static uint8_t old_pos;
+
   ui_back_to_main = 0;
+
+  // erase old marker and show new marker
+  pos = map(configuration.vol * 100, 0, 100, 0, LCD_CHARS);
 
   if (ui_state != UI_VOLUME)
   {
     lcd.clear();
     lcd.show(0, 0, LCD_CHARS, "Volume");
+    lcd.show(1, pos, 1, "*");
+    old_pos = pos;
   }
 
+  // show value
   lcd.show(0, LCD_CHARS - 3, 3, configuration.vol * 100);
-  if (configuration.vol == 0.0)
-    lcd.show(1, 0, LCD_CHARS , " ");
-  else
+
+  if (pos != old_pos)
   {
-    if (configuration.vol < (float(LCD_CHARS) / 100))
-      lcd.show(1, 0, LCD_CHARS, "*");
-    else
-    {
-      for (uint8_t i = 0; i < map(configuration.vol * 100, 0, 100, 0, LCD_CHARS); i++)
-        lcd.show(1, i, 1, "*");
-      for (uint8_t i = map(configuration.vol * 100, 0, 100, 0, LCD_CHARS); i < LCD_CHARS; i++)
-        lcd.show(1, i, 1, " ");
-    }
+    lcd.show(1, pos, 1, "*");
+    lcd.show(1, old_pos, 1, " ");
+    old_pos=pos;
   }
 
   ui_state = UI_VOLUME;

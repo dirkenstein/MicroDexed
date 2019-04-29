@@ -46,7 +46,7 @@
 // AUDIO
 // If nothing is defined PT8211 is used as audio output device!
 #define TEENSY_AUDIO_BOARD 1
-//#define TGA_AUDIO_BOARD 
+//#define TGA_AUDIO_BOARD
 
 //*************************************************************************************************
 //* MIDI SETTINGS
@@ -89,11 +89,12 @@
 #define REDUCE_LOUDNESS 1
 #endif
 #define SAMPLE_RATE 44100
+#define SOFTEN_VALUE_CHANGE_STEPS 10
 
 //*************************************************************************************************
 //* UI AND DATA-STORE SETTINGS
 //*************************************************************************************************
-#define CONTROL_RATE_MS 200
+#define CONTROL_RATE_MS 100
 #define TIMER_UI_HANDLING_MS 100
 
 //*************************************************************************************************
@@ -191,5 +192,11 @@ struct config_t {
   float vol;
   float pan;
   uint8_t midi_channel;
+};
+
+// struct for smoothing value changes
+struct value_change_t {
+  float diff;
+  uint16_t steps;
 };
 #endif // CONFIG_H_INCLUDED

@@ -72,8 +72,8 @@ AudioConnection          patchCord10(volume_l, 0, i2s1, 1);
 AudioControlSGTL5000     sgtl5000_1;
 #elif defined(TGA_AUDIO_BOARD)
 AudioOutputI2S           i2s1;
-AudioConnection          patchCord9(volume_r, 0, i2s1, 1);
-AudioConnection          patchCord10(volume_l, 0, i2s1, 0);
+AudioConnection          patchCord9(volume_r, 0, i2s1, 0);
+AudioConnection          patchCord10(volume_l, 0, i2s1, 1);
 AudioControlWM8731master wm8731_1;
 #else
 AudioOutputPT8211        pt8211_1;
@@ -111,6 +111,7 @@ elapsedMillis cpu_mem_millis;
 #endif
 config_t configuration = {0xffff, 0, 0, VOLUME, 0.5f, DEFAULT_MIDI_CHANNEL};
 bool eeprom_update_flag = false;
+value_change_t soften_volume = {0.0, 0};
 
 void setup()
 {
@@ -323,6 +324,22 @@ void loop()
 
     // Shutdown unused voices
     active_voices = dexed->getNumNotesPlaying();
+
+    // check for value changes
+    if (soften_volume.steps > 0)
+    {
+      // soften volume value
+      soften_volume.steps--;
+      set_volume(configuration.vol + soften_volume.diff, configuration.pan);
+#ifdef DEBUG
+      Serial.print(F("Volume: "));
+      Serial.print(configuration.vol, 5);
+      Serial.print(F(" Volume step: "));
+      Serial.print(soften_volume.steps);
+      Serial.print(F(" Volume diff: "));
+      Serial.println(soften_volume.diff, 5);
+#endif
+    }
   }
 
 #ifdef I2C_DISPLAY
