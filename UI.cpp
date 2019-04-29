@@ -45,7 +45,6 @@ void handle_ui(void)
 
   if (autostore >= AUTOSTORE_MS && (ui_main_state == UI_MAIN_VOICE_SELECTED || ui_main_state == UI_MAIN_BANK_SELECTED))
   {
-    ui_show_main();
     switch (ui_main_state)
     {
       case UI_MAIN_VOICE_SELECTED:
@@ -245,6 +244,7 @@ void handle_ui(void)
               ui_state = UI_MAIN;
               lcd.clear();
               enc[1].write(configuration.voice);
+              eeprom_write();
               ui_show_main();
               break;
             case UI_MAIN:
@@ -434,12 +434,12 @@ void ui_show_volume(void)
   ui_back_to_main = 0;
 
   // erase old marker and show new marker
-  pos = map(configuration.vol * 100, 0, 100, 0, LCD_CHARS);
+  pos = map(configuration.vol * 100 + 0.5, 0, 100, 0, LCD_CHARS-1);
 
   if (ui_state != UI_VOLUME)
   {
     lcd.clear();
-    lcd.show(0, 0, LCD_CHARS, "Volume");
+    lcd.show(0, 0, LCD_CHARS-1, "Volume");
     lcd.show(1, pos, 1, "*");
     old_pos = pos;
   }

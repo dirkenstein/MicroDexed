@@ -795,7 +795,7 @@ void initial_values_from_eeprom(void)
 
 void eeprom_write(void)
 {
-  autostore = 0;
+  autostore=0;
   eeprom_update_flag = true;
 }
 

@@ -89,12 +89,12 @@
 #define REDUCE_LOUDNESS 1
 #endif
 #define SAMPLE_RATE 44100
-#define SOFTEN_VALUE_CHANGE_STEPS 10
+#define SOFTEN_VALUE_CHANGE_STEPS 20
 
 //*************************************************************************************************
 //* UI AND DATA-STORE SETTINGS
 //*************************************************************************************************
-#define CONTROL_RATE_MS 100
+#define CONTROL_RATE_MS 50
 #define TIMER_UI_HANDLING_MS 100
 
 //*************************************************************************************************
