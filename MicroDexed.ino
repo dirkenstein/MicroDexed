@@ -61,30 +61,24 @@ AudioConnection          patchCord3(delay1, 0, mixer1, 1);
 AudioConnection          patchCord4(delay1, 0, mixer2, 2);
 AudioConnection          patchCord5(mixer1, delay1);
 AudioConnection          patchCord6(mixer1, 0, mixer2, 1);
-#if defined(TEENSY_AUDIO_BOARD)
-AudioOutputI2S           i2s1;
-AudioConnection          patchCord7(mixer2, 0, i2s1, 0);
-AudioConnection          patchCord8(mixer2, 0, i2s1, 1);
-AudioControlSGTL5000     sgtl5000_1;
-#elif defined(TGA_AUDIO_BOARD)
-AudioOutputI2S           i2s1;
 AudioAmplifier           volume_r;
 AudioAmplifier           volume_l;
 AudioConnection          patchCord7(mixer2, volume_r);
 AudioConnection          patchCord8(mixer2, volume_l);
+#if defined(TEENSY_AUDIO_BOARD)
+AudioOutputI2S           i2s1;
+AudioConnection          patchCord9(volume_r, 0, i2s1, 0);
+AudioConnection          patchCord10(volume_l, 0, i2s1, 1);
+AudioControlSGTL5000     sgtl5000_1;
+#elif defined(TGA_AUDIO_BOARD)
+AudioOutputI2S           i2s1;
 AudioConnection          patchCord9(volume_r, 0, i2s1, 1);
 AudioConnection          patchCord10(volume_l, 0, i2s1, 0);
 AudioControlWM8731master wm8731_1;
 #else
 AudioOutputPT8211        pt8211_1;
-AudioAmplifier           volume_master;
-AudioAmplifier           volume_r;
-AudioAmplifier           volume_l;
-AudioConnection          patchCord7(mixer2, 0, volume_master, 0);
-AudioConnection          patchCord8(volume_master, volume_r);
-AudioConnection          patchCord9(volume_master, volume_l);
-AudioConnection          patchCord10(volume_r, 0, pt8211_1, 0);
-AudioConnection          patchCord11(volume_l, 0, pt8211_1, 1);
+AudioConnection          patchCord9(volume_r, 0, pt8211_1, 0);
+AudioConnection          patchCord10(volume_l, 0, pt8211_1, 1);
 #endif
 
 Dexed* dexed = new Dexed(SAMPLE_RATE);
@@ -157,13 +151,13 @@ void setup()
 
 #ifdef TEENSY_AUDIO_BOARD
   sgtl5000_1.enable();
-  //sgtl5000_1.dacVolumeRamp();
-  sgtl5000_1.dacVolumeRampLinear();
+  sgtl5000_1.dacVolumeRamp();
+  //sgtl5000_1.dacVolumeRampLinear();
   //sgtl5000_1.dacVolumeRampDisable();
   sgtl5000_1.unmuteHeadphone();
   sgtl5000_1.unmuteLineout();
   sgtl5000_1.autoVolumeDisable(); // turn off AGC
-  sgtl5000_1.volume(0.5,0.5); // Headphone volume
+  sgtl5000_1.volume(0.5, 0.5); // Headphone volume
   sgtl5000_1.lineOutLevel(SGTL5000_LINEOUT_LEVEL);
   sgtl5000_1.audioPostProcessorEnable();
   sgtl5000_1.autoVolumeControl(1, 1, 1, 0.9, 0.01, 0.05);
@@ -181,8 +175,6 @@ void setup()
 #else
   Serial.println(F("PT8211 enabled."));
 #endif
-
-  set_volume(configuration.vol, configuration.pan);
 
   // start SD card
   SPI.setMOSI(SDCARD_MOSI_PIN);
@@ -222,21 +214,24 @@ void setup()
     }
 #endif
 
-    // Init effects
-    delay1.delay(0, mapfloat(effect_delay_feedback, 0, ENC_DELAY_TIME_STEPS, 0.0, DELAY_MAX_TIME));
-    // mixer1 is the feedback-adding mixer, mixer2 the whole delay (with/without feedback) mixer
-    mixer1.gain(0, 1.0); // original signal
-    mixer1.gain(1, mapfloat(effect_delay_feedback, 0, ENC_DELAY_FB_STEPS, 0.0, 1.0)); // amount of feedback
-    mixer2.gain(0, 1.0 - mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // original signal
-    mixer2.gain(1, mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // delayed signal (including feedback)
-    mixer2.gain(2, mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // only delayed signal (without feedback)
-    dexed->fx.Gain =  1.0;
-    dexed->fx.Reso = 1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS;
-    dexed->fx.Cutoff = 1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS;
-
     // load default SYSEX data
     load_sysex(configuration.bank, configuration.voice);
   }
+
+  // Init effects
+  delay1.delay(0, mapfloat(effect_delay_feedback, 0, ENC_DELAY_TIME_STEPS, 0.0, DELAY_MAX_TIME));
+  // mixer1 is the feedback-adding mixer, mixer2 the whole delay (with/without feedback) mixer
+  mixer1.gain(0, 1.0); // original signal
+  mixer1.gain(1, mapfloat(effect_delay_feedback, 0, ENC_DELAY_FB_STEPS, 0.0, 1.0)); // amount of feedback
+  mixer2.gain(0, 1.0 - mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // original signal
+  mixer2.gain(1, mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // delayed signal (including feedback)
+  mixer2.gain(2, mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // only delayed signal (without feedback)
+  dexed->fx.Gain =  1.0;
+  dexed->fx.Reso = 1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS;
+  dexed->fx.Cutoff = 1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS;
+
+  // set initial volume and pan (read from EEPROM)
+  set_volume(configuration.vol, configuration.pan);
 
 #ifdef I2C_DISPLAY
   enc[0].write(map(configuration.vol * 100, 0, 100, 0, ENC_VOL_STEPS));
@@ -721,14 +716,11 @@ void set_volume(float v, float p)
   Serial.println(pow(configuration.vol * cosf( configuration.pan * PI / 2), VOLUME_CURVE), 3);
 #endif
 
+  dexed->fx.Gain = v;
+
   // http://files.csound-tutorial.net/floss_manual/Release03/Cs_FM_03_ScrapBook/b-panning-and-spatialization.html
-#ifdef TEENSY_AUDIO_BOARD
-  sgtl5000_1.dacVolume(pow(v * sinf(p * PI / 2), VOLUME_CURVE), pow(v * cosf(p * PI / 2), VOLUME_CURVE));
-#else
-  volume_master.gain(VOLUME_CURVE);
   volume_r.gain(sinf(p * PI / 2));
   volume_l.gain(cosf(p * PI / 2));
-#endif
 }
 
 // https://www.dr-lex.be/info-stuff/volumecontrols.html#table1
