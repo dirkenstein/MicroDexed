@@ -112,6 +112,8 @@ elapsedMillis cpu_mem_millis;
 config_t configuration = {0xffff, 0, 0, VOLUME, 0.5f, DEFAULT_MIDI_CHANNEL};
 bool eeprom_update_flag = false;
 value_change_t soften_volume = {0.0, 0};
+value_change_t soften_filter_res = {0.0, 0};
+value_change_t soften_filter_cut = {0.0, 0};
 
 void setup()
 {
@@ -348,6 +350,34 @@ void loop()
       Serial.print(soften_volume.steps);
       Serial.print(F(" Volume diff: "));
       Serial.println(soften_volume.diff, 5);
+#endif
+    }
+    if (soften_filter_res.steps > 0)
+    {
+      // soften filter resonance value
+      soften_filter_res.steps--;
+      dexed->fx.Reso = dexed->fx.Reso + soften_filter_res.diff;
+#ifdef DEBUG
+      Serial.print(F("Filter-Resonance: "));
+      Serial.print(dexed->fx.Reso, 5);
+      Serial.print(F(" Filter-Resonance step: "));
+      Serial.print(soften_filter_res.steps);
+      Serial.print(F(" Filter-Resonance diff: "));
+      Serial.println(soften_filter_res.diff, 5);
+#endif
+    }
+    if (soften_filter_cut.steps > 0)
+    {
+      // soften filter cutoff value
+      soften_filter_cut.steps--;
+      dexed->fx.Cutoff = dexed->fx.Cutoff + soften_filter_cut.diff;
+#ifdef DEBUG
+      Serial.print(F("Filter-Cutoff: "));
+      Serial.print(dexed->fx.Cutoff, 5);
+      Serial.print(F(" Filter-Cutoff step: "));
+      Serial.print(soften_filter_cut.steps);
+      Serial.print(F(" Filter-Cutoff diff: "));
+      Serial.println(soften_filter_cut.diff, 5);
 #endif
     }
   }
@@ -795,7 +825,7 @@ void initial_values_from_eeprom(void)
 
 void eeprom_write(void)
 {
-  autostore=0;
+  autostore = 0;
   eeprom_update_flag = true;
 }
 

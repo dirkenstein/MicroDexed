@@ -211,16 +211,17 @@ void handle_ui(void)
                 enc[i].write(0);
               else if (enc[i].read() >= ENC_VOL_STEPS)
                 enc[i].write(ENC_VOL_STEPS);
+              enc_val[i] = enc[i].read();
               //set_volume(float(map(enc[i].read(), 0, ENC_VOL_STEPS, 0, 100)) / 100, configuration.pan);
               tmp = (float(map(enc[i].read(), 0, ENC_VOL_STEPS, 0, 100)) / 100) - configuration.vol;
               soften_volume.diff = tmp / SOFTEN_VALUE_CHANGE_STEPS;
-              soften_volume.steps = SOFTEN_VALUE_CHANGE_STEPS + 1;
+              soften_volume.steps = SOFTEN_VALUE_CHANGE_STEPS;
 #ifdef DEBUG
               Serial.print(F("Setting soften volume from: "));
               Serial.print(configuration.vol, 5);
-              Serial.print(F(" Volume step: "));
+              Serial.print(F("/Volume step: "));
               Serial.print(soften_volume.steps);
-              Serial.print(F(" Volume diff: "));
+              Serial.print(F("/Volume diff: "));
               Serial.println(soften_volume.diff, 5);
 #endif
               eeprom_write();
@@ -300,25 +301,39 @@ void handle_ui(void)
                 case UI_MAIN_FILTER_RES:
                   if (enc[i].read() <= 0)
                     enc[i].write(0);
-                  else if (enc[i].read() > ENC_FILTER_RES_STEPS)
+                  else if (enc[i].read() >= ENC_FILTER_RES_STEPS)
                     enc[i].write(ENC_FILTER_RES_STEPS);
+                  enc_val[i] = enc[i].read();
                   effect_filter_resonance = enc[i].read();
-                  dexed->fx.Reso = 1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS;
+                  tmp = 1.0 - (float(map(enc[i].read(), 0, ENC_FILTER_RES_STEPS, 0, 100)) / 100) - dexed->fx.Reso;
+                  soften_filter_res.diff = tmp / SOFTEN_VALUE_CHANGE_STEPS;
+                  soften_filter_res.steps = SOFTEN_VALUE_CHANGE_STEPS;
 #ifdef DEBUG
-                  Serial.print(F("Setting filter resonance to: "));
-                  Serial.println(1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS, 5);
+                  Serial.print(F("Setting soften filter-resonance from: "));
+                  Serial.print(dexed->fx.Reso, 5);
+                  Serial.print(F("/Filter-Resonance step: "));
+                  Serial.print(soften_filter_res.steps);
+                  Serial.print(F("/Filter-Resonance diff: "));
+                  Serial.println(soften_filter_res.diff, 5);
 #endif
                   break;
                 case UI_MAIN_FILTER_CUT:
                   if (enc[i].read() <= 0)
                     enc[i].write(0);
-                  else if (enc[i].read() > ENC_FILTER_CUT_STEPS)
+                  else if (enc[i].read() >= ENC_FILTER_CUT_STEPS)
                     enc[i].write(ENC_FILTER_CUT_STEPS);
+                  enc_val[i] = enc[i].read();
                   effect_filter_cutoff = enc[i].read();
-                  dexed->fx.Cutoff = 1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS;
+                  tmp = 1.0 - (float(map(enc[i].read(), 0, ENC_FILTER_CUT_STEPS, 0, 100)) / 100) - dexed->fx.Cutoff;
+                  soften_filter_cut.diff = tmp / SOFTEN_VALUE_CHANGE_STEPS;
+                  soften_filter_cut.steps = SOFTEN_VALUE_CHANGE_STEPS;
 #ifdef DEBUG
-                  Serial.print(F("Setting filter cutoff to: "));
-                  Serial.println(1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS, 5);
+                  Serial.print(F("Setting soften filter-cutoff from: "));
+                  Serial.print(dexed->fx.Cutoff, 5);
+                  Serial.print(F("/Filter-Cutoff step: "));
+                  Serial.print(soften_filter_cut.steps);
+                  Serial.print(F("/Filter-Cutoff diff: "));
+                  Serial.println(soften_filter_cut.diff, 5);
 #endif
                   break;
               }
@@ -434,12 +449,12 @@ void ui_show_volume(void)
   ui_back_to_main = 0;
 
   // erase old marker and show new marker
-  pos = map(configuration.vol * 100 + 0.5, 0, 100, 0, LCD_CHARS-1);
+  pos = map(configuration.vol * 100 + 0.5, 0, 100, 0, LCD_CHARS - 1);
 
   if (ui_state != UI_VOLUME)
   {
     lcd.clear();
-    lcd.show(0, 0, LCD_CHARS-1, "Volume");
+    lcd.show(0, 0, LCD_CHARS - 1, "Volume");
     lcd.show(1, pos, 1, "*");
     old_pos = pos;
   }

@@ -57,6 +57,8 @@ extern AudioEffectDelay delay1;
 extern AudioMixer4 mixer1;
 extern AudioMixer4 mixer2;
 extern value_change_t soften_volume;
+extern value_change_t soften_filter_res;
+extern value_change_t soften_filter_cut;
 
 void handle_ui(void);
 void ui_show_main(void);
