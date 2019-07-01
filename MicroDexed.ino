@@ -37,7 +37,9 @@
 #include "PluginFx.h"
 #ifdef I2C_DISPLAY // selecting sounds by encoder, button and display
 #include "UI.h"
+#define BOUNCE_WITH_PROMPT_DETECTION
 #include <Bounce.h>
+#define ENCODER_DO_NOT_USE_INTERRUPTS
 #include "Encoder4.h"
 #include "LiquidCrystalPlus_I2C.h"
 LiquidCrystalPlus_I2C lcd(LCD_I2C_ADDRESS, LCD_CHARS, LCD_LINES);

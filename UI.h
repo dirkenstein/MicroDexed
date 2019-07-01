@@ -24,6 +24,7 @@
 */
 
 #include "config.h"
+#define BOUNCE_WITH_PROMPT_DETECTION
 #include <Bounce.h>
 #include <EEPROM.h>
 #include <MIDI.h>
