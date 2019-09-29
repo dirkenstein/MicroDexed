@@ -668,6 +668,31 @@ void handleSystemExclusive(byte * sysex, uint len)
     Serial.println(data_index, DEC);
 #endif
   }
+  else if (len == 163)
+  {
+    // 1 Voice bulk upload
+#ifdef DEBUG
+    Serial.println(F("1 Voice bulk upload"));
+#endif
+
+    if ((sysex[3] & 0x7f) != 0)
+    {
+#ifdef DEBUG
+      Serial.println(F("E: Not a SysEx voice bulk upload."));
+#endif
+      return;
+    }
+
+    if (((sysex[4] << 7) | sysex[5]) != 0x9b)
+    {
+#ifdef DEBUG
+      Serial.println(F("E: Wrong length for SysEx voice bulk upload (not 155)."));
+#endif
+      return;
+    }
+
+
+  }
 #ifdef DEBUG
   else
     Serial.println(F("E: SysEx parameter length wrong."));

@@ -31,6 +31,13 @@
 // ATTENTION! For better latency you have to redefine AUDIO_BLOCK_SAMPLES from
 // 128 to 64 in <ARDUINO-IDE-DIR>/cores/teensy3/AudioStream.h
 
+// If you want to test the system with Linux and withous any keyboard and/or audio equipment, you can do the following:
+// 1. In Arduino-IDE enable "Tools->USB-Type->Serial + MIDI + Audio"
+// 2. Build the firmware with "MIDI_DEVICE_USB" enabled in config.h.
+// 3. Afterconnecting to a Linux system there should be a MIDI an audio device available that is called "MicroMDAEPiano", so you can start the following:
+// $ aplaymidi -p 20:0 <MIDI-File> # e.g. test.mid
+// $ arecord -f cd -Dhw:1,0 /tmp/bla.wav
+
 #define VERSION "0.9.5"
 
 //*************************************************************************************************
