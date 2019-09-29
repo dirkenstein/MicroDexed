@@ -39,9 +39,9 @@
 
 // MIDI
 #define MIDI_DEVICE_DIN Serial1
-#define MIDI_DEVICE_USB 1
-#define MIDI_DEVICE_USB_HOST 1
-#define MIDI_DEVICE_NUMBER 0
+//#define MIDI_DEVICE_USB 0
+//#define MIDI_DEVICE_USB_HOST 0
+//#define MIDI_DEVICE_NUMBER 0
 
 // AUDIO
 // If nothing is defined PT8211 is used as audio output device!
@@ -102,7 +102,7 @@
 //*************************************************************************************************
 
 #define DEBUG 1
-#define SERIAL_SPEED 38400
+#define SERIAL_SPEED 9600
 #define SHOW_XRUN 1
 #define SHOW_CPU_LOAD_MSEC 5000
 
@@ -116,10 +116,13 @@
 //#define SDCARD_SCK_PIN   14
 #define SGTL5000_LINEOUT_LEVEL 29
 // Teensy 3.5 & 3.6 SD card
-#define SDCARD_CS_PIN    BUILTIN_SDCARD
+//#define SDCARD_CS_PIN    SS
+//#define SDCARD_MOSI_PIN  11  // not actually used
+//#define SDCARD_SCK_PIN   13  // not actually used
+
+#define SDCARD_CS_PIN    10
 #define SDCARD_MOSI_PIN  11  // not actually used
 #define SDCARD_SCK_PIN   13  // not actually used
-
 // Encoder with button
 #define ENC_VOL_STEPS 43
 #define ENC_FILTER_RES_STEPS 100
@@ -132,9 +135,9 @@
 #define ENC_L_PIN_B  2
 #define BUT_L_PIN    4
 #define INITIAL_ENC_L_VALUE 0
-#define ENC_R_PIN_A  28
-#define ENC_R_PIN_B  29
-#define BUT_R_PIN    30
+#define ENC_R_PIN_A  6
+#define ENC_R_PIN_B  5
+#define BUT_R_PIN    8
 #define INITIAL_ENC_R_VALUE 0
 #define BUT_DEBOUNCE_MS 20
 #define LONG_BUTTON_PRESS 500
@@ -142,9 +145,9 @@
 // LCD Display
 #define I2C_DISPLAY 1
 // [I2C] SCL: Pin 19, SDA: Pin 18 (https://www.pjrc.com/teensy/td_libs_Wire.html)
-#define LCD_I2C_ADDRESS 0x27
+#define LCD_I2C_ADDRESS 0x3f
 #define LCD_CHARS 16
-#define LCD_LINES 2
+#define LCD_LINES 4
 #define UI_AUTO_BACK_MS 3000
 #define AUTOSTORE_MS 5000
 #define AUTOSTORE_FAST_MS 50

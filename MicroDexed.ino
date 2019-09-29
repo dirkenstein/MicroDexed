@@ -41,8 +41,11 @@
 #include <Bounce.h>
 #define ENCODER_DO_NOT_USE_INTERRUPTS
 #include "Encoder4.h"
-#include "LiquidCrystalPlus_I2C.h"
-LiquidCrystalPlus_I2C lcd(LCD_I2C_ADDRESS, LCD_CHARS, LCD_LINES);
+//#include "LiquidCrystalPlus_I2C.h"
+//LiquidCrystalPlus_I2C disp(LCD_I2C_ADDRESS, LCD_CHARS, LCD_LINES);
+#include "SSD1322_Plus.h"
+SSD1322_Plus disp(U8G2_R0, /* cs=*/ 9, /* dc=*/ 15, /* reset=*/ 14);  // Enable U8G2_16BIT in u8g2.h
+
 Encoder4 enc[2] = {Encoder4(ENC_L_PIN_A, ENC_L_PIN_B), Encoder4(ENC_R_PIN_A, ENC_R_PIN_B)};
 int32_t enc_val[2] = {INITIAL_ENC_L_VALUE, INITIAL_ENC_R_VALUE};
 Bounce but[2] = {Bounce(BUT_L_PIN, BUT_DEBOUNCE_MS), Bounce(BUT_R_PIN, BUT_DEBOUNCE_MS)};
@@ -58,7 +61,7 @@ AudioMixer4              mixer1;
 AudioMixer4              mixer2;
 AudioAmplifier           volume_r;
 AudioAmplifier           volume_l;
-AudioOutputUSB           usb1;
+//AudioOutputUSB           usb1;
 AudioConnection          patchCord0(queue1, peak1);
 AudioConnection          patchCord1(queue1, 0, mixer1, 0);
 AudioConnection          patchCord2(queue1, 0, mixer2, 0);
@@ -68,13 +71,13 @@ AudioConnection          patchCord5(mixer1, delay1);
 AudioConnection          patchCord6(mixer1, 0, mixer2, 1);
 AudioConnection          patchCord7(mixer2, volume_r);
 AudioConnection          patchCord8(mixer2, volume_l);
-AudioConnection          patchCord9(mixer2, 0, usb1, 0);
-AudioConnection          patchCord10(mixer2, 0, usb1, 1);
+//AudioConnection          patchCord9(mixer2, 0, usb1, 0);
+//AudioConnection          patchCord10(mixer2, 0, usb1, 1);
 #if defined(TEENSY_AUDIO_BOARD)
 AudioOutputI2S           i2s1;
 AudioConnection          patchCord11(volume_r, 0, i2s1, 0);
 AudioConnection          patchCord12(volume_l, 0, i2s1, 1);
-AudioControlSGTL5000     sgtl5000_1;
+//AudioControlSGTL5000     sgtl5000_1;
 #elif defined(TGA_AUDIO_BOARD)
 AudioOutputI2S           i2s1;
 AudioConnection          patchCord11(volume_r, 0, i2s1, 0);
@@ -126,17 +129,26 @@ void setup()
   Serial.begin(SERIAL_SPEED);
 
 #ifdef I2C_DISPLAY
-  lcd.init();
-  lcd.blink_off();
-  lcd.cursor_off();
-  lcd.backlight();
-  lcd.noAutoscroll();
-  lcd.clear();
-  lcd.display();
-  lcd.show(0, 0, 16, "MicroDexed");
-  lcd.show(0, 11, 16, VERSION);
-  lcd.show(1, 0, 16, "(c)parasiTstudio");
-
+  /* disp.init();
+  disp.blink_off();
+  disp.cursor_off();
+  disp.backlight();
+  disp.noAutoscroll();
+  disp.clear();
+  disp.display();
+  */
+  disp.begin();
+  disp.clear();
+  disp.clearBuffer();
+  disp.setFont(u8g2_font_6x10_tf);
+  disp.setFontRefHeightExtendedText();
+  disp.setDrawColor(1);
+  disp.setFontPosTop();
+  disp.setFontDirection(0);
+  disp.show(0, 0, 16, "MicroDexed");
+  disp.show(0, 11, 16, VERSION);
+  disp.show(1, 0, 16, "(c)parasiTstudio");
+  disp.sendBuffer();
   pinMode(BUT_L_PIN, INPUT_PULLUP);
   pinMode(BUT_R_PIN, INPUT_PULLUP);
 #endif
@@ -158,7 +170,7 @@ void setup()
   AudioMemory(AUDIO_MEM);
 
 #ifdef TEENSY_AUDIO_BOARD
-  sgtl5000_1.enable();
+  /* sgtl5000_1.enable();
   sgtl5000_1.dacVolumeRamp();
   //sgtl5000_1.dacVolumeRampLinear();
   //sgtl5000_1.dacVolumeRampDisable();
@@ -174,6 +186,7 @@ void setup()
   sgtl5000_1.surroundSound(7, 2); // Configures virtual surround width from 0 (mono) to 7 (widest). select may be set to 1 (disable), 2 (mono input) or 3 (stereo input).
   sgtl5000_1.enhanceBassEnable();
   sgtl5000_1.enhanceBass(1.0, 0.2, 1, 2); // Configures the bass enhancement by setting the levels of the original stereo signal and the bass-enhanced mono level which will be mixed together. The high-pass filter may be enabled (0) or bypassed (1).
+  */
   /* The cutoff frequency is specified as follows:
     value  frequency
     0      80Hz
@@ -195,8 +208,8 @@ void setup()
 #endif
 
   // start SD card
-  SPI.setMOSI(SDCARD_MOSI_PIN);
-  SPI.setSCK(SDCARD_SCK_PIN);
+  //SPI.setMOSI(SDCARD_MOSI_PIN);
+  //SPI.setSCK(SDCARD_SCK_PIN);
   if (!SD.begin(SDCARD_CS_PIN))
   {
     Serial.println(F("SD card not accessable."));
@@ -286,7 +299,7 @@ void setup()
 #endif
 
 #ifdef I2C_DISPLAY
-  lcd.clear();
+  disp.clear();
   ui_show_main();
 #endif
 
