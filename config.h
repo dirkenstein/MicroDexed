@@ -52,7 +52,7 @@
 
 // AUDIO
 // If nothing is defined PT8211 is used as audio output device!
-//#define TEENSY_AUDIO_BOARD 1
+#define TEENSY_AUDIO_BOARD 1
 //#define TGA_AUDIO_BOARD
 
 //*************************************************************************************************
