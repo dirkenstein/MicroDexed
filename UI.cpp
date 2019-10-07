@@ -711,22 +711,19 @@ LiquidMenu<DisplayClass> menu(disp);
 
 void setup_ui(void)
 {
-    /* disp.init();
-     disp.blink_off();
-     disp.cursor_off();
-     disp.backlight();
-     disp.noAutoscroll();
-     disp.clear();
-     disp.display();
-     */
+#ifdef LCD_I2C
+    disp.init();
+    disp.blink_off();
+    disp.cursor_off();
+    disp.backlight();
+    disp.noAutoscroll();
+    disp.clear();
+    disp.display();
+#else
     disp.begin();
     disp.clear();
-    //disp.clearBuffer();
     disp.setFont(u8x8_font_amstrad_cpc_extended_f);
-    //disp.setFontRefHeightExtendedText();
-    //disp.setDrawColor(1);
-    //disp.setFontPosTop();
-    //disp.setFontDirection(0);
+#endif
     disp.printf("MicroDexed %s\n", VERSION);
     disp.printf("(c)parasiTstudio");
 
@@ -734,7 +731,6 @@ void setup_ui(void)
     volume_line1.attach_function(1, update_volume);
     volume_line2.attach_function(1, update_volume);
     
-    //midichan_line1.attach_function(1, update_midi);
     midichan_line2.attach_function(1, update_midi);
     
     filter_line2.attach_function(1, update_res);
