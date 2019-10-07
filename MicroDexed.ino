@@ -657,10 +657,21 @@ void handleSystemExclusive(byte * sysex, uint len)
   }
   else if (len == 163)
   {
+    int32_t bulk_checksum_calc = 0;
+    int8_t bulk_checksum = sysex[161];
+
     // 1 Voice bulk upload
 #ifdef DEBUG
     Serial.println(F("1 Voice bulk upload"));
 #endif
+
+    if (sysex[162] != 0xf7)
+    {
+#ifdef DEBUG
+      Serial.println(F("E: Found no SysEx end marker."));
+#endif
+      return;
+    }
 
     if ((sysex[3] & 0x7f) != 0)
     {
@@ -678,7 +689,39 @@ void handleSystemExclusive(byte * sysex, uint len)
       return;
     }
 
+    // checksum calculation
+    for (uint8_t i = 0; i < 155 ; i++)
+    {
+      bulk_checksum_calc -= sysex[i + 6];
+    }
+    bulk_checksum_calc &= 0x7f;
 
+    if (bulk_checksum_calc != bulk_checksum)
+    {
+#ifdef DEBUG
+      Serial.print(F("E: Checksum error for one voice [0x"));
+      Serial.print(bulk_checksum, HEX);
+      Serial.print(F("/0x"));
+      Serial.print(bulk_checksum_calc, HEX);
+      Serial.println(F("]"));
+#endif
+      return;
+    }
+
+    // load sysex-data into voice memory
+    uint8_t tmp_data[155];
+    memset(tmp_data, 0, 155 * sizeof(uint8_t));
+
+    for (uint8_t i = 0; i < 155 ; i++)
+    {
+      tmp_data[i] = sysex[i + 6];
+    }
+    strncpy(voice_name, (char *)&tmp_data[145], sizeof(voice_name) - 1);
+    Serial.print(F("Voice ["));
+    Serial.print(voice_name);
+    Serial.print(F("] loaded."));
+    
+    dexed->loadSysexVoice(tmp_data);
   }
 #ifdef DEBUG
   else
