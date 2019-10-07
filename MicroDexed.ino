@@ -35,23 +35,17 @@
 #include "dexed.h"
 #include "dexed_sysex.h"
 #include "PluginFx.h"
-#ifdef I2C_DISPLAY // selecting sounds by encoder, button and display
+#ifdef LCD_DISPLAY // selecting sounds by encoder, button and display
 #include "UI.h"
 #define BOUNCE_WITH_PROMPT_DETECTION
 #include <Bounce.h>
 #define ENCODER_DO_NOT_USE_INTERRUPTS
 #include "Encoder4.h"
-//#include "LiquidCrystalPlus_I2C.h"
-//LiquidCrystalPlus_I2C disp(LCD_I2C_ADDRESS, LCD_CHARS, LCD_LINES);
-#include "SSD1322_Plus.h"
-SSD1322_Plus disp(U8G2_R0, /* cs=*/ 9, /* dc=*/ 15, /* reset=*/ 14);  // Enable U8G2_16BIT in u8g2.h
 
 Encoder4 enc[2] = {Encoder4(ENC_L_PIN_A, ENC_L_PIN_B), Encoder4(ENC_R_PIN_A, ENC_R_PIN_B)};
 int32_t enc_val[2] = {INITIAL_ENC_L_VALUE, INITIAL_ENC_R_VALUE};
 Bounce but[2] = {Bounce(BUT_L_PIN, BUT_DEBOUNCE_MS), Bounce(BUT_R_PIN, BUT_DEBOUNCE_MS)};
 elapsedMillis master_timer;
-uint8_t ui_state = UI_MAIN;
-uint8_t ui_main_state = UI_MAIN_VOICE;
 #endif
 
 AudioPlayQueue           queue1;
@@ -61,7 +55,9 @@ AudioMixer4              mixer1;
 AudioMixer4              mixer2;
 AudioAmplifier           volume_r;
 AudioAmplifier           volume_l;
-//AudioOutputUSB           usb1;
+#if defined(AUDIO_DEVICE_USB)
+AudioOutputUSB           usb1;
+#endif
 AudioConnection          patchCord0(queue1, peak1);
 AudioConnection          patchCord1(queue1, 0, mixer1, 0);
 AudioConnection          patchCord2(queue1, 0, mixer2, 0);
@@ -71,19 +67,24 @@ AudioConnection          patchCord5(mixer1, delay1);
 AudioConnection          patchCord6(mixer1, 0, mixer2, 1);
 AudioConnection          patchCord7(mixer2, volume_r);
 AudioConnection          patchCord8(mixer2, volume_l);
-//AudioConnection          patchCord9(mixer2, 0, usb1, 0);
-//AudioConnection          patchCord10(mixer2, 0, usb1, 1);
-#if defined(TEENSY_AUDIO_BOARD)
+#if defined(AUDIO_DEVICE_USB)
+AudioConnection          patchCord9(mixer2, 0, usb1, 0);
+AudioConnection          patchCord10(mixer2, 0, usb1, 1);
+#endif
+
+#if defined(TEENSY_AUDIO_BOARD) || defined (I2S_AUDIO_ONLY)
 AudioOutputI2S           i2s1;
 AudioConnection          patchCord11(volume_r, 0, i2s1, 0);
 AudioConnection          patchCord12(volume_l, 0, i2s1, 1);
-//AudioControlSGTL5000     sgtl5000_1;
+#endif
+#if defined(TEENSY_AUDIO_BOARD)
+AudioControlSGTL5000     sgtl5000_1;
 #elif defined(TGA_AUDIO_BOARD)
 AudioOutputI2S           i2s1;
 AudioConnection          patchCord11(volume_r, 0, i2s1, 0);
 AudioConnection          patchCord12(volume_l, 0, i2s1, 1);
 AudioControlWM8731master wm8731_1;
-#else
+#elif !defined(I2S_AUDIO_ONLY)
 AudioOutputPT8211        pt8211_1;
 AudioConnection          patchCord11(volume_r, 0, pt8211_1, 0);
 AudioConnection          patchCord12(volume_l, 0, pt8211_1, 1);
@@ -100,11 +101,9 @@ char bank_name[BANK_NAME_LEN];
 char voice_name[VOICE_NAME_LEN];
 char bank_names[MAX_BANKS][BANK_NAME_LEN];
 char voice_names[MAX_VOICES][VOICE_NAME_LEN];
-elapsedMillis autostore;
 uint8_t midi_timing_counter = 0; // 24 per qarter
 elapsedMillis midi_timing_timestep;
 uint16_t midi_timing_quarter = 0;
-elapsedMillis long_button_pressed;
 uint8_t effect_filter_cutoff = 0;
 uint8_t effect_filter_resonance = 0;
 uint8_t effect_delay_time = 0;
@@ -113,6 +112,7 @@ uint8_t effect_delay_volume = 0;
 bool effect_delay_sync = 0;
 elapsedMicros fill_audio_buffer;
 elapsedMillis control_rate;
+elapsedMillis autostore;
 uint8_t active_voices = 0;
 #ifdef SHOW_CPU_LOAD_MSEC
 elapsedMillis cpu_mem_millis;
@@ -128,27 +128,8 @@ void setup()
   //while (!Serial) ; // wait for Arduino Serial Monitor
   Serial.begin(SERIAL_SPEED);
 
-#ifdef I2C_DISPLAY
-  /* disp.init();
-  disp.blink_off();
-  disp.cursor_off();
-  disp.backlight();
-  disp.noAutoscroll();
-  disp.clear();
-  disp.display();
-  */
-  disp.begin();
-  disp.clear();
-  disp.clearBuffer();
-  disp.setFont(u8g2_font_6x10_tf);
-  disp.setFontRefHeightExtendedText();
-  disp.setDrawColor(1);
-  disp.setFontPosTop();
-  disp.setFontDirection(0);
-  disp.show(0, 0, 16, "MicroDexed");
-  disp.show(0, 11, 16, VERSION);
-  disp.show(1, 0, 16, "(c)parasiTstudio");
-  disp.sendBuffer();
+#ifdef LCD_DISPLAY
+  setup_ui();
   pinMode(BUT_L_PIN, INPUT_PULLUP);
   pinMode(BUT_R_PIN, INPUT_PULLUP);
 #endif
@@ -170,7 +151,7 @@ void setup()
   AudioMemory(AUDIO_MEM);
 
 #ifdef TEENSY_AUDIO_BOARD
-  /* sgtl5000_1.enable();
+  sgtl5000_1.enable();
   sgtl5000_1.dacVolumeRamp();
   //sgtl5000_1.dacVolumeRampLinear();
   //sgtl5000_1.dacVolumeRampDisable();
@@ -186,7 +167,7 @@ void setup()
   sgtl5000_1.surroundSound(7, 2); // Configures virtual surround width from 0 (mono) to 7 (widest). select may be set to 1 (disable), 2 (mono input) or 3 (stereo input).
   sgtl5000_1.enhanceBassEnable();
   sgtl5000_1.enhanceBass(1.0, 0.2, 1, 2); // Configures the bass enhancement by setting the levels of the original stereo signal and the bass-enhanced mono level which will be mixed together. The high-pass filter may be enabled (0) or bypassed (1).
-  */
+  
   /* The cutoff frequency is specified as follows:
     value  frequency
     0      80Hz
@@ -203,6 +184,8 @@ void setup()
   wm8731_1.enable();
   wm8731_1.volume(1.0);
   Serial.println(F("TGA board enabled."));
+#elif defined(I2S_AUDIO_ONLY)
+  Serial.println(F("I2S enabled."));
 #else
   Serial.println(F("PT8211 enabled."));
 #endif
@@ -210,6 +193,7 @@ void setup()
   // start SD card
   //SPI.setMOSI(SDCARD_MOSI_PIN);
   //SPI.setSCK(SDCARD_SCK_PIN);
+  //digitalWrite(LCD_CS_PIN, HIGH);
   if (!SD.begin(SDCARD_CS_PIN))
   {
     Serial.println(F("SD card not accessable."));
@@ -248,6 +232,7 @@ void setup()
     // load default SYSEX data
     load_sysex(configuration.bank, configuration.voice);
   }
+  //digitalWrite(LCD_CS_PIN, LOW);
 
   // Init effects
   delay1.delay(0, mapfloat(effect_delay_feedback, 0, ENC_DELAY_TIME_STEPS, 0.0, DELAY_MAX_TIME));
@@ -264,10 +249,10 @@ void setup()
   // set initial volume and pan (read from EEPROM)
   set_volume(configuration.vol, configuration.pan);
 
-#ifdef I2C_DISPLAY
-  enc[0].write(map(configuration.vol * 100, 0, 100, 0, ENC_VOL_STEPS));
+#ifdef LCD_DISPLAY
+  //enc[0].write(map(configuration.vol * 100, 0, 100, 0, ENC_VOL_STEPS));
   enc_val[0] = enc[0].read();
-  enc[1].write(configuration.voice);
+  //enc[1].write(configuration.voice);
   enc_val[1] = enc[1].read();
   but[0].update();
   but[1].update();
@@ -296,11 +281,6 @@ void setup()
 
 #if defined (DEBUG) && defined (SHOW_CPU_LOAD_MSEC)
   show_cpu_and_mem_usage();
-#endif
-
-#ifdef I2C_DISPLAY
-  disp.clear();
-  ui_show_main();
 #endif
 
   AudioInterrupts();
@@ -400,7 +380,7 @@ void loop()
     }
   }
 
-#ifdef I2C_DISPLAY
+#ifdef LCD_DISPLAY
   // UI-HANDLING
   if (master_timer >= TIMER_UI_HANDLING_MS)
   {
@@ -455,6 +435,7 @@ void handleControlChange(byte inChannel, byte inCtrl, byte inValue)
         {
           configuration.bank = inValue;
           handle_ui();
+          handle_ui_change();
         }
         break;
       case 1:
@@ -495,26 +476,31 @@ void handleControlChange(byte inChannel, byte inCtrl, byte inValue)
         effect_filter_resonance = map(inValue, 0, 127, 0, ENC_FILTER_RES_STEPS);
         dexed->fx.Reso = 1.0 - float(effect_filter_resonance) / ENC_FILTER_RES_STEPS;
         handle_ui();
+        handle_ui_change();
         break;
       case 104:  // CC 104: filter cutoff
         effect_filter_cutoff = map(inValue, 0, 127, 0, ENC_FILTER_CUT_STEPS);
         dexed->fx.Cutoff = 1.0 - float(effect_filter_cutoff) / ENC_FILTER_CUT_STEPS;
         handle_ui();
+        handle_ui_change();
         break;
       case 105:  // CC 105: delay time
         effect_delay_time = map(inValue, 0, 127, 0, ENC_DELAY_TIME_STEPS);
         delay1.delay(0, mapfloat(effect_delay_time, 0, ENC_DELAY_TIME_STEPS, 0.0, DELAY_MAX_TIME));
         handle_ui();
+        handle_ui_change();
         break;
       case 106:  // CC 106: delay feedback
         effect_delay_feedback = map(inValue, 0, 127, 0, ENC_DELAY_FB_STEPS);
         mixer1.gain(1, mapfloat(float(effect_delay_feedback), 0, ENC_DELAY_FB_STEPS, 0.0, 1.0));
         handle_ui();
+        handle_ui_change();
         break;
       case 107:  // CC 107: delay volume
         effect_delay_volume = map(inValue, 0, 127, 0, ENC_DELAY_VOLUME_STEPS);
         mixer2.gain(1, mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // delay tap1 signal (with added feedback)
         handle_ui();
+        handle_ui_change();
         break;
       case 120:
         dexed->panic();
@@ -552,6 +538,7 @@ void handleProgramChange(byte inChannel, byte inProgram)
   {
     load_sysex(configuration.bank, inProgram);
     handle_ui();
+    handle_ui_change();
   }
 }
 

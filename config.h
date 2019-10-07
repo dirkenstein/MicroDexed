@@ -52,8 +52,11 @@
 
 // AUDIO
 // If nothing is defined PT8211 is used as audio output device!
-#define TEENSY_AUDIO_BOARD 1
+//#define TEENSY_AUDIO_BOARD 1
+#define I2S_AUDIO_ONLY
 //#define TGA_AUDIO_BOARD
+
+//#define AUDIO_DEVICE_USB
 
 //*************************************************************************************************
 //* MIDI SETTINGS
@@ -127,9 +130,11 @@
 //#define SDCARD_MOSI_PIN  11  // not actually used
 //#define SDCARD_SCK_PIN   13  // not actually used
 
+
 #define SDCARD_CS_PIN    10
 #define SDCARD_MOSI_PIN  11  // not actually used
 #define SDCARD_SCK_PIN   13  // not actually used
+
 // Encoder with button
 #define ENC_VOL_STEPS 43
 #define ENC_FILTER_RES_STEPS 100
@@ -150,7 +155,12 @@
 #define LONG_BUTTON_PRESS 500
 
 // LCD Display
-#define I2C_DISPLAY 1
+#define LCD_DISPLAY 1
+#define LCD_U8X8_SPI 1
+#define LCD_CS_PIN 9
+#define LCD_DC_PIN 15
+#define LCD_RESET_PIN 14
+//#define LCD_I2C
 // [I2C] SCL: Pin 19, SDA: Pin 18 (https://www.pjrc.com/teensy/td_libs_Wire.html)
 #define LCD_I2C_ADDRESS 0x3f
 #define LCD_CHARS 16

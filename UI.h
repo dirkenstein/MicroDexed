@@ -28,16 +28,21 @@
 #include <Bounce.h>
 #include <EEPROM.h>
 #include <MIDI.h>
-#include "LiquidCrystalPlus_I2C.h"
+//#include "SSD1322_Plus.h"
 #include "Encoder4.h"
 
 #ifndef UI_H_INCLUDED
 #define UI_H_INCLUDED
 
-extern Encoder4 enc[2];
+#define NUM_ENCODERS 2
+
+#define VALUE_ENCODER 1
+
+extern Encoder4 enc[NUM_ENCODERS];
 extern int32_t enc_val[2];
 extern Bounce but[2];
-extern LiquidCrystalPlus_I2C lcd;
+//extern LiquidCrystalPlus_I2C disp;
+//extern SSD1322_Plus disp;
 extern config_t configuration;
 extern uint8_t max_loaded_banks;
 extern char bank_name[BANK_NAME_LEN];
@@ -61,16 +66,13 @@ extern value_change_t soften_volume;
 extern value_change_t soften_filter_res;
 extern value_change_t soften_filter_cut;
 
-void handle_ui(void);
-void ui_show_main(void);
-void ui_show_volume(void);
-void ui_show_midichannel(void);
-void ui_show_effects_filter(void);
-void ui_show_effects_delay(void);
-float mapfloat(float val, float in_min, float in_max, float out_min, float out_max);
 
-enum ui_states {UI_MAIN, UI_VOLUME, UI_MIDICHANNEL, UI_EFFECTS_FILTER, UI_EFFECTS_DELAY};
-enum ui_main_states {UI_MAIN_BANK, UI_MAIN_VOICE, UI_MAIN_BANK_SELECTED, UI_MAIN_VOICE_SELECTED, UI_MAIN_FILTER_RES, UI_MAIN_FILTER_CUT, UI_MAIN_DELAY_TIME, UI_MAIN_DELAY_FEEDBACK, UI_MAIN_DELAY_VOLUME};
+void handle_ui(void);
+void handle_ui_change(void);
+
+void setup_ui(void);
+
+float mapfloat(float val, float in_min, float in_max, float out_min, float out_max);
 
 class MyEncoder : public Encoder
 {
