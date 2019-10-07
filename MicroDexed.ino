@@ -191,9 +191,10 @@ void setup()
 #endif
 
   // start SD card
-  //SPI.setMOSI(SDCARD_MOSI_PIN);
-  //SPI.setSCK(SDCARD_SCK_PIN);
-  //digitalWrite(LCD_CS_PIN, HIGH);
+#ifndef __IMXRT1062__
+  SPI.setMOSI(SDCARD_MOSI_PIN);
+  SPI.setSCK(SDCARD_SCK_PIN);
+#endif
   if (!SD.begin(SDCARD_CS_PIN))
   {
     Serial.println(F("SD card not accessable."));
@@ -232,7 +233,6 @@ void setup()
     // load default SYSEX data
     load_sysex(configuration.bank, configuration.voice);
   }
-  //digitalWrite(LCD_CS_PIN, LOW);
 
   // Init effects
   delay1.delay(0, mapfloat(effect_delay_feedback, 0, ENC_DELAY_TIME_STEPS, 0.0, DELAY_MAX_TIME));
