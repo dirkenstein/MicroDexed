@@ -184,11 +184,18 @@
 #ifdef MIDI_DEVICE_USB
 #define USBCON 1
 #endif
+#if defined(__IMXRT1062__) //Teensy-4.0
+#undef MIDI_DEVICE_USB_HOST
+#define MAX_NOTES 16
+#endif
+
 #if defined(__MK66FX1M0__) // Teensy-3.6
 // Teensy-3.6 settings
 #define MIDI_DEVICE_USB_HOST 1
 #define MAX_NOTES 16
-#else
+#endif
+
+#if defined (__MK64FX512__)
 // Teensy-3.5 settings
 #undef MIDI_DEVICE_USB_HOST
 #define MAX_NOTES 11
