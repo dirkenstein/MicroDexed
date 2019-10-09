@@ -480,9 +480,10 @@ LiquidScreen<DisplayClass> volume_screen(volume_line1, volume_line2);
 
 char midichannel_value_text1[] = "    ";
 char * get_ui_MidiChannel (void) {
-    if (configuration.midi_channel == MIDI_CHANNEL_OMNI) return "OMNI";
+    if (configuration.midi_channel == MIDI_CHANNEL_OMNI)
+        strcpy (midichannel_value_text1, "OMNI");
     else
-        sprintf(midichannel_value_text1, "  %0d", configuration.midi_channel);
+        sprintf(midichannel_value_text1, "  %02d", configuration.midi_channel);
     return  midichannel_value_text1;
 }
 
@@ -507,13 +508,13 @@ LiquidScreen<DisplayClass> midichan_screen(midichan_line1, midichan_line2);
 
 char filterres_value_text1[] = "    ";
 char * get_ui_FilterRes (void) {
-    sprintf(filterres_value_text1, "  %0d", map(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0, 99));
+    sprintf(filterres_value_text1, "  %02ld", map(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0, 99));
     return  filterres_value_text1;
 }
 
 char filtercut_value_text1[] = "    ";
 char * get_ui_FilterCut (void) {
-    sprintf(filtercut_value_text1, "  %0d", map(effect_filter_cutoff, 0, ENC_FILTER_CUT_STEPS, 0, 99));
+    sprintf(filtercut_value_text1, "  %02ld", map(effect_filter_cutoff, 0, ENC_FILTER_CUT_STEPS, 0, 99));
     return  filtercut_value_text1;
 }
 
@@ -569,20 +570,20 @@ LiquidScreen<DisplayClass> filter_screen(filter_line1, filter_line2, filter_line
 
 char delay_value_text1[] = "     ";
 char * get_ui_DelayT (void) {
-    sprintf(delay_value_text1, " %0d", map(effect_delay_time, 0, ENC_DELAY_TIME_STEPS, 0, DELAY_MAX_TIME));
+    sprintf(delay_value_text1, " %ld", map(effect_delay_time, 0, ENC_DELAY_TIME_STEPS, 0, DELAY_MAX_TIME));
     return  delay_value_text1;
 }
 
 char delay_value_text2[] = "    ";
 char * get_ui_DelayFB (void) {
-    sprintf(delay_value_text2, " %0d", map(effect_delay_feedback, 0, ENC_DELAY_FB_STEPS, 0, 99));
+    sprintf(delay_value_text2, " %02ld", map(effect_delay_feedback, 0, ENC_DELAY_FB_STEPS, 0, 99));
     return  delay_value_text2;
 }
 
 
 char delay_value_text3[] = "    ";
 char * get_ui_DelayVol (void) {
-    sprintf(delay_value_text3, " %0d", map(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0, 99));
+    sprintf(delay_value_text3, " %02ld", map(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0, 99));
     return  delay_value_text3;
 }
 
@@ -647,7 +648,7 @@ LiquidScreen<DisplayClass> delay_screen(delay_line1, delay_line2, delay_line3, d
 
 char main_value_text1[] = "     ";
 char * get_ui_BankN (void) {
-    sprintf(main_value_text1, " %0d ", configuration.bank);
+    sprintf(main_value_text1, " %02d ", configuration.bank);
     return  main_value_text1;
 }
 
@@ -683,7 +684,7 @@ void update_voice(void) {
 }
 char main_value_text3[] = "     ";
 char * get_ui_VoiceN (void) {
-    sprintf(main_value_text3, " %0d ", configuration.voice +1);
+    sprintf(main_value_text3, " %02d ", configuration.voice +1);
     return  main_value_text3;
 }
 
