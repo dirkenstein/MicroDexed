@@ -156,11 +156,11 @@
 
 // LCD Display
 #define LCD_DISPLAY 1
-#define LCD_U8X8_SPI 1
+//#define LCD_U8X8_SPI 1
 #define LCD_CS_PIN 9
 #define LCD_DC_PIN 15
 #define LCD_RESET_PIN 14
-//#define LCD_I2C
+#define LCD_I2C
 // [I2C] SCL: Pin 19, SDA: Pin 18 (https://www.pjrc.com/teensy/td_libs_Wire.html)
 #define LCD_I2C_ADDRESS 0x3f
 #define LCD_CHARS 16

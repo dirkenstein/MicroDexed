@@ -62,6 +62,7 @@ extern bool effect_delay_sync;
 extern AudioEffectDelay delay1;
 extern AudioMixer4 mixer1;
 extern AudioMixer4 mixer2;
+extern uint8_t wanted_volume;
 extern value_change_t soften_volume;
 extern value_change_t soften_filter_res;
 extern value_change_t soften_filter_cut;

@@ -439,26 +439,28 @@ void handle_ui_old(void)
 
 char volume_value_text1[] = "    ";
 char * get_ui_Volume (void) {
-    sprintf(volume_value_text1, "%0.0f", configuration.vol*100+0.5);
+    sprintf(volume_value_text1, "%03d", wanted_volume);
     return  volume_value_text1;
 }
 
 char volume_value_text2[] = "                      ";
 
+#define BAR_LEN (LCD_CHARS -2)
 char * get_ui_VolumeBar (void) {
-    int barlen = (int)(configuration.vol*20 + 0.5);
+    int barlen = (int)(wanted_volume/100.0*BAR_LEN + 0.5);
     int n = sprintf(volume_value_text2,"%.*s", barlen, "====================");
-    sprintf(volume_value_text2 + n, "%.*s", 20-barlen, "                    ");
+    sprintf(volume_value_text2 + n, "%.*s", BAR_LEN-barlen, "                    ");
     return  volume_value_text2;
 }
 
 void update_volume(void) {
     int diff = lastEncoderReading[VALUE_ENCODER] - encoderReading[VALUE_ENCODER];
-    int newVolume = (configuration.vol* 100 + 0.5) + diff;
+    int newVolume = wanted_volume + diff;
     if (newVolume > 100) newVolume = 100;
     if (newVolume < 0) newVolume = 0;
-    //configuration.vol = newVolume / 100.0;
-    float tmp = float(newVolume / 100.0) - configuration.vol;
+    //
+    wanted_volume = newVolume;
+    float tmp = float(wanted_volume / 100.0) - configuration.vol;
     soften_volume.diff = tmp / SOFTEN_VALUE_CHANGE_STEPS;
     soften_volume.steps = SOFTEN_VALUE_CHANGE_STEPS;
 #ifdef DEBUG
@@ -521,10 +523,10 @@ char * get_ui_FilterCut (void) {
 
 void update_res(void) {
     int diff = lastEncoderReading[VALUE_ENCODER] - encoderReading[VALUE_ENCODER];
-    int newRes = map(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0, 99) + diff;
-    if (newRes > 99) newRes = 99;
+    int newRes = effect_filter_resonance + diff;
+    if (newRes > ENC_FILTER_RES_STEPS) newRes = ENC_FILTER_RES_STEPS;
     if (newRes < 0) newRes = 0;
-    effect_filter_resonance = map(newRes, 0, 99, 0, ENC_FILTER_RES_STEPS);
+    effect_filter_resonance = newRes;
     //menu.update();
     float tmp = 1.0 - (float(map(effect_filter_resonance, 0, ENC_FILTER_RES_STEPS, 0, 100)) / 100) - dexed->fx.Reso;
     soften_filter_res.diff = tmp / SOFTEN_VALUE_CHANGE_STEPS;
@@ -542,10 +544,10 @@ void update_res(void) {
 
 void update_cut(void) {
     int diff = lastEncoderReading[VALUE_ENCODER] - encoderReading[VALUE_ENCODER];
-    int newCut = map(effect_filter_cutoff, 0, ENC_FILTER_CUT_STEPS, 0, 99) + diff;
-    if (newCut > 99) newCut = 99;
+    int newCut = effect_filter_cutoff + diff;
+    if (newCut > ENC_FILTER_CUT_STEPS) newCut = ENC_FILTER_CUT_STEPS;
     if (newCut < 0) newCut = 0;
-    effect_filter_cutoff = map(newCut, 0, 99, 0, ENC_FILTER_CUT_STEPS);
+    effect_filter_cutoff = newCut;
     float tmp = 1.0 - (float(map(effect_filter_cutoff, 0, ENC_FILTER_CUT_STEPS, 0, 100)) / 100) - dexed->fx.Cutoff;
     soften_filter_cut.diff = tmp / SOFTEN_VALUE_CHANGE_STEPS;
     soften_filter_cut.steps = SOFTEN_VALUE_CHANGE_STEPS;
@@ -591,7 +593,7 @@ char * get_ui_DelayVol (void) {
 
 void update_t(void) {
     int diff = lastEncoderReading[VALUE_ENCODER] - encoderReading[VALUE_ENCODER];
-    int newT = map(effect_delay_time, 0, ENC_DELAY_TIME_STEPS, 0, DELAY_MAX_TIME) + diff;
+    int newT = map(effect_delay_time +diff, 0, ENC_DELAY_TIME_STEPS, 0, DELAY_MAX_TIME);
     if (newT > DELAY_MAX_TIME) newT = DELAY_MAX_TIME;
     if (newT < 0) newT = 0;
     effect_delay_time = map(newT, 0, DELAY_MAX_TIME, 0, ENC_DELAY_TIME_STEPS);
@@ -606,10 +608,10 @@ void update_t(void) {
 
 void update_fb(void) {
     int diff = lastEncoderReading[VALUE_ENCODER] - encoderReading[VALUE_ENCODER];
-    int newFB = map(effect_delay_feedback, 0, ENC_DELAY_FB_STEPS, 0, 99) + diff;
-    if (newFB > 99) newFB = 99;
+    int newFB =  effect_delay_feedback + diff;
+    if (newFB > ENC_DELAY_FB_STEPS) newFB = ENC_DELAY_FB_STEPS;
     if (newFB < 0) newFB = 0;
-    effect_delay_feedback = map(newFB, 0, 99, 0, ENC_DELAY_FB_STEPS);
+    effect_delay_feedback = newFB;
     mixer1.gain(1, mapfloat(float(effect_delay_feedback), 0, ENC_DELAY_FB_STEPS, 0.0, 1.0));
 #ifdef DEBUG
     Serial.print(F("Setting delay feedback to: "));
@@ -621,10 +623,10 @@ void update_fb(void) {
 
 void update_d_vol(void) {
     int diff = lastEncoderReading[VALUE_ENCODER] - encoderReading[VALUE_ENCODER];
-    int newVol = map(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0, 99) + diff;
-    if (newVol > 99) newVol = 99;
+    int newVol = effect_delay_volume + diff;
+    if (newVol > ENC_DELAY_VOLUME_STEPS) newVol = ENC_DELAY_VOLUME_STEPS;
     if (newVol < 0) newVol = 0;
-    effect_delay_volume = map(newVol, 0, 99, 0, ENC_DELAY_VOLUME_STEPS);
+    effect_delay_volume = newVol;
     float tmp_vol = mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0);
     //mixer2.gain(0, 1.0 - mapfloat(effect_delay_volume, 0, ENC_DELAY_VOLUME_STEPS, 0.0, 1.0)); // delay tap1 signal (with added feedback)
     mixer2.gain(0, 1.0 - tmp_vol); // delay tap1 signal (with added feedback)
@@ -714,6 +716,8 @@ void setup_ui(void)
 {
 #ifdef LCD_I2C
     disp.init();
+    //This needs to be here to initialise special characters
+    menu.init();
     disp.blink_off();
     disp.cursor_off();
     disp.backlight();
@@ -725,7 +729,9 @@ void setup_ui(void)
     disp.clear();
     disp.setFont(u8x8_font_amstrad_cpc_extended_f);
 #endif
-    disp.printf("MicroDexed %s\n", VERSION);
+    disp.setCursor(0, 0);
+    disp.printf("MicroDexed %s", VERSION);
+    disp.setCursor(0, 1);
     disp.printf("(c)parasiTstudio");
 
 
@@ -744,6 +750,12 @@ void setup_ui(void)
     main_line2.attach_function(1, update_bank);
     main_line3.attach_function(1, update_voice);
     
+    //menu.init();
+    main_screen.set_displayLineCount(LCD_LINES);
+    midichan_screen.set_displayLineCount(LCD_LINES);
+    filter_screen.set_displayLineCount(LCD_LINES);
+    delay_screen.set_displayLineCount(LCD_LINES);
+
     menu.add_screen(main_screen);
     
     menu.add_screen(volume_screen);
@@ -773,11 +785,11 @@ void handle_ui(void)
                 case 0:
                     Serial.println(F("SWM button pressed"));
                     menu.next_screen();
-                    lastMs_mainScreen = millis();
+                    lastMs_mainScreen =0;
                     break;
                 case 1:
                     Serial.println(F("SEL button pressed"));
-                    lastMs_mainScreen = millis();
+                    lastMs_mainScreen = 0;
                     break;
                 default:
                     break;
@@ -799,15 +811,15 @@ void handle_ui(void)
                     break;
             }
             lastEncoderReading[x] = encoderReading[x];
-            lastMs_mainScreen = millis();
+            lastMs_mainScreen = 0;
         }
         
        
     
     }
     // Periodic switching to the main screen.
-    if (millis() - lastMs_mainScreen > period_mainScreen) {
-        lastMs_mainScreen = millis();
+    if (lastMs_mainScreen > period_mainScreen) {
+        lastMs_mainScreen = 0;
         menu.change_screen(main_screen);
     }
 }

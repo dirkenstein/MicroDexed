@@ -104,6 +104,8 @@ char voice_names[MAX_VOICES][VOICE_NAME_LEN];
 uint8_t midi_timing_counter = 0; // 24 per qarter
 elapsedMillis midi_timing_timestep;
 uint16_t midi_timing_quarter = 0;
+
+uint8_t wanted_volume = 0;
 uint8_t effect_filter_cutoff = 0;
 uint8_t effect_filter_resonance = 0;
 uint8_t effect_delay_time = 0;
@@ -127,7 +129,6 @@ void setup()
 {
   //while (!Serial) ; // wait for Arduino Serial Monitor
   Serial.begin(SERIAL_SPEED);
-
 #ifdef LCD_DISPLAY
   setup_ui();
   pinMode(BUT_L_PIN, INPUT_PULLUP);
@@ -250,6 +251,7 @@ void setup()
   set_volume(configuration.vol, configuration.pan);
 
 #ifdef LCD_DISPLAY
+  wanted_volume = map(configuration.vol * 100, 0, 100, 0, ENC_VOL_STEPS);
   //enc[0].write(map(configuration.vol * 100, 0, 100, 0, ENC_VOL_STEPS));
   enc_val[0] = enc[0].read();
   //enc[1].write(configuration.voice);
